@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+recursive-include ghostdumper/web/templates *.html
+recursive-include ghostdumper/web/static *
+recursive-include docs *.md
+recursive-include examples *.py

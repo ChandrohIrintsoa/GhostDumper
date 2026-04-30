@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhostDumper v2.2 — IL2CPP Deep Analyzer</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-brand">
+                <h1>👻 GhostDumper</h1>
+                <span class="version-badge">v2.2</span>
+                <div class="header-subtitle">IL2CPP Deep Analyzer & Runtime Toolkit</div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-sm" id="theme-toggle" title="Toggle theme">🌓</button>
+                <a href="https://github.com/ChandrohIrintsoa/GhostDumper" target="_blank" class="btn btn-sm">📖 Docs</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="main-grid">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Analysis</div>
+                    <a href="#" class="nav-item active" data-tab="upload">
+                        <span class="nav-icon">📤</span>
+                        <span>Upload</span>
+                    </a>
+                    <a href="#" class="nav-item" data-tab="overview">
+                        <span class="nav-icon">📊</span>
+                        <span>Overview</span>
+                        <span class="nav-count" id="nav-overview-count"></span>
+                    </a>
+                    <a href="#" class="nav-item" data-tab="classes">
+                        <span class="nav-icon">📁</span>
+                        <span>Classes</span>
+                        <span class="nav-count" id="nav-classes-count">0</span>
+                    </a>
+                    <a href="#" class="nav-item" data-tab="methods">
+                        <span class="nav-icon">⚡</span>
+                        <span>Methods</span>
+                        <span class="nav-count" id="nav-methods-count">0</span>
+                    </a>
+                    <a href="#" class="nav-item" data-tab="strings">
+                        <span class="nav-icon">🔤</span>
+                        <span>Strings</span>
+                        <span class="nav-count" id="nav-strings-count">0</span>
+                    </a>
+                    <a href="#" class="nav-item" data-tab="symbols">
+                        <span class="nav-icon">🏷️</span>
+                        <span>Symbols</span>
+                        <span class="nav-count" id="nav-symbols-count">0</span>
+                    </a>
+                </div>
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Tools</div>
+                    <a href="#" class="nav-item" data-tab="search">
+                        <span class="nav-icon">🔍</span>
+                        <span>Semantic Search</span>
+                    </a>
+                    <a href="#" class="nav-item" data-tab="hierarchy">
+                        <span class="nav-icon">🌳</span>
+                        <span>Class Hierarchy</span>
+                    </a>
+                    <a href="#" class="nav-item" data-tab="security">
+                        <span class="nav-icon">🔒</span>
+                        <span>Security Analysis</span>
+                    </a>
+                </div>
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Output</div>
+                    <a href="#" class="nav-item" data-tab="downloads">
+                        <span class="nav-icon">📥</span>
+                        <span>Downloads</span>
+                    </a>
+                </div>
+            </aside>
+
+            <!-- Main Panel -->
+            <main class="main-panel">
+                <!-- Upload Tab -->
+                <div class="tab-content active" id="tab-upload">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>📤 Upload IL2CPP Files</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="upload-zone" id="upload-zone">
+                                <div class="upload-zone-icon">📦</div>
+                                <div class="upload-zone-text">Drop files here or click to browse</div>
+                                <div class="upload-zone-hint">Supported: .so, .dll, .exe, global-metadata.dat</div>
+                                <input type="file" id="file-input" multiple accept=".so,.dll,.exe,.dat">
+                            </div>
+                            <div id="file-list" class="mt-2"></div>
+                            <div class="flex gap-2 mt-2">
+                                <button class="btn btn-primary" id="analyze-btn" disabled>
+                                    <span class="spinner hidden" id="analyze-spinner">⟳</span>
+                                    <span id="analyze-text">Start Analysis</span>
+                                </button>
+                                <button class="btn" id="clear-files-btn">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-2">
+                        <div class="card-header">
+                            <h2>⚙️ Analysis Options</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="flex gap-2 flex-wrap">
+                                <label class="btn btn-sm">
+                                    <input type="checkbox" id="opt-deobfuscate" style="margin-right: 0.5rem;">
+                                    Deobfuscate
+                                </label>
+                                <label class="btn btn-sm">
+                                    <input type="checkbox" id="opt-hooks" style="margin-right: 0.5rem;">
+                                    Generate Hooks
+                                </label>
+                                <label class="btn btn-sm">
+                                    <input type="checkbox" id="opt-all-formats" style="margin-right: 0.5rem;">
+                                    All Formats
+                                </label>
+                                <label class="btn btn-sm">
+                                    <input type="checkbox" id="opt-web-report" checked style="margin-right: 0.5rem;">
+                                    Web Report
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Tab (hidden by default) -->
+                <div class="tab-content hidden" id="tab-progress">
+                    <div class="progress-container">
+                        <div class="progress-header">
+                            <div class="progress-title">
+                                <span class="spinner">⟳</span>
+                                <span>Analyzing...</span>
+                            </div>
+                            <div class="progress-status" id="progress-status">Initializing</div>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-steps">
+                            <div class="progress-step" data-step="load">📦 Load Binary</div>
+                            <div class="progress-step" data-step="parse">📋 Parse Metadata</div>
+                            <div class="progress-step" data-step="resolve">🔗 Resolve Types</div>
+                            <div class="progress-step" data-step="deobf">🔓 Deobfuscate</div>
+                            <div class="progress-step" data-step="plugins">🔌 Plugins</div>
+                            <div class="progress-step" data-step="generate">📤 Generate</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overview Tab -->
+                <div class="tab-content hidden" id="tab-overview">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-classes">0</div>
+                            <div class="stat-label">Classes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-methods">0</div>
+                            <div class="stat-label">Methods</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-fields">0</div>
+                            <div class="stat-label">Fields</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-strings">0</div>
+                            <div class="stat-label">Strings</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-symbols">0</div>
+                            <div class="stat-label">Symbols</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-duration">0s</div>
+                            <div class="stat-label">Duration</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>📊 Binary Information</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                                <div class="info-item">
+                                    <div class="text-secondary text-sm">Format</div>
+                                    <div class="mono" id="info-format">-</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="text-secondary text-sm">Architecture</div>
+                                    <div class="mono" id="info-arch">-</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="text-secondary text-sm">Base Address</div>
+                                    <div class="mono text-accent" id="info-base">-</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="text-secondary text-sm">Entry Point</div>
+                                    <div class="mono" id="info-entry">-</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="text-secondary text-sm">File Size</div>
+                                    <div class="mono" id="info-size">-</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="text-secondary text-sm">Metadata Version</div>
+                                    <div class="mono" id="info-metadata-version">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Classes Tab -->
+                <div class="tab-content hidden" id="tab-classes">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>📁 Classes</h2>
+                            <div class="search-wrapper" style="width: 300px;">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" class="search-input" id="class-search" placeholder="Filter classes...">
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Namespace</th>
+                                            <th>Parent</th>
+                                            <th>Methods</th>
+                                            <th>Fields</th>
+                                            <th>Token</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="class-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Methods Tab -->
+                <div class="tab-content hidden" id="tab-methods">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>⚡ Methods</h2>
+                            <div class="search-wrapper" style="width: 300px;">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" class="search-input" id="method-search" placeholder="Filter methods...">
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Return Type</th>
+                                            <th>Parameters</th>
+                                            <th>Address</th>
+                                            <th>Token</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="method-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strings Tab -->
+                <div class="tab-content hidden" id="tab-strings">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>🔤 Strings</h2>
+                            <div class="search-wrapper" style="width: 300px;">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" class="search-input" id="string-search" placeholder="Filter strings...">
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 80px;">#</th>
+                                            <th>String</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="string-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Symbols Tab -->
+                <div class="tab-content hidden" id="tab-symbols">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>🏷️ Symbols</h2>
+                            <div class="search-wrapper" style="width: 300px;">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" class="search-input" id="symbol-search" placeholder="Filter symbols...">
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Address</th>
+                                            <th>Size</th>
+                                            <th>Type</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="symbol-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Tab -->
+                <div class="tab-content hidden" id="tab-search">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>🔍 Semantic Search</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="search-wrapper mb-2">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" class="search-input" id="semantic-search" 
+                                    placeholder="Describe what you're looking for (e.g., 'player health methods')...">
+                            </div>
+                            <button class="btn btn-primary" id="search-btn">Search</button>
+
+                            <div class="table-container mt-2">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Name</th>
+                                            <th>Relevance</th>
+                                            <th>Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="search-results-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Downloads Tab -->
+                <div class="tab-content hidden" id="tab-downloads">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>📥 Generated Files</h2>
+                        </div>
+                        <div class="card-body">
+                            <div id="downloads-list" class="flex flex-col gap-1">
+                                <div class="text-secondary">No files generated yet. Run an analysis first.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

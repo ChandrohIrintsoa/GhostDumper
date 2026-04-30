@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ghostdumper"
+version = "2.2.0"
+description = "IL2CPP Deep Analyzer & Runtime Toolkit — Next-gen reverse engineering framework"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Chandroh Irintsoa", email = "ghost@dumper.dev"}
+]
+keywords = ["il2cpp", "reverse-engineering", "unity", "android", "elf", "metadata"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Security",
+    "Topic :: Software Development :: Disassemblers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "pyelftools>=0.30",
+    "cxxfilt>=0.3.0",
+    "click>=8.0",
+    "rich>=13.0",
+    "flask>=2.3",
+    "flask-socketio>=5.3",
+    "requests>=2.28",
+    "pycryptodome>=3.19",
+    "numpy>=1.24",
+    "networkx>=3.0",
+    "jinja2>=3.1",
+    "pydantic>=2.0",
+    "typing-extensions>=4.5",
+]
+
+[project.optional-dependencies]
+ai = ["sentence-transformers>=2.2", "torch>=2.0", "transformers>=4.30"]
+dev = ["pytest>=7.0", "black", "flake8", "mypy"]
+
+[project.scripts]
+ghostdump = "ghostdumper.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/ChandrohIrintsoa/GhostDumper"
+Repository = "https://github.com/ChandrohIrintsoa/GhostDumper.git"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ghostdumper*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
