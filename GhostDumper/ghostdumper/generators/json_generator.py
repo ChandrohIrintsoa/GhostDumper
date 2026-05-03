@@ -23,7 +23,7 @@ class JsonGenerator:
         """Generate JSON output files."""
         # Full metadata
         full_data = {
-            "ghostdumper_version": "2.2.0",
+            "ghostdumper_version": "2.2.1",
             "generated_at": datetime.now().isoformat(),
             "binary": self.result.binary_info,
             "metadata": self.result.metadata_info,
@@ -45,7 +45,7 @@ class JsonGenerator:
 
         # Methods-only for scripting
         methods_data = {
-            "version": "2.2.0",
+            "version": "2.2.1",
             "generated_at": datetime.now().isoformat(),
             "method_count": len(self.result.methods),
             "methods": [
@@ -67,7 +67,7 @@ class JsonGenerator:
 
         # Strings-only
         strings_data = {
-            "version": "2.2.0",
+            "version": "2.2.1",
             "string_count": len(self.result.strings),
             "strings": self.result.strings[:5000],
         }

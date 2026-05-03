@@ -41,7 +41,7 @@ class WebReportGenerator:
             "strings": self.result.strings[:5000],
             "symbols": self.result.symbols[:2000],
             "duration": self.result.duration,
-            "version": "2.2.0",
+            "version": "2.2.1",
             "generated": datetime.now().isoformat(),
         }
 

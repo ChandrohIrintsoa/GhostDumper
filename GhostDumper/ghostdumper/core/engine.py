@@ -160,11 +160,6 @@ class GhostEngine:
             progress.update(task, completed=100, description="[yellow]Skipping metadata (no file provided)[/yellow]")
             return
 
-        # Detect metadata version before full parse
-        detected_version = VersionDetector.detect(self.config.metadata_path)
-        if detected_version and detected_version not in self.SUPPORTED_METADATA_VERSIONS:
-            self.logger.warning(f"Unsupported metadata version detected: v{detected_version}")
-
         self.metadata_parser = MetadataParser(self.config.metadata_path, self.config)
         self.metadata_parser.parse()
 

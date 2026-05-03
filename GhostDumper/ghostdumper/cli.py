@@ -17,7 +17,14 @@ from rich.text import Text
 
 from .core.engine import GhostEngine
 from .core.config import GhostConfig
-from .web.server import start_server
+
+try:
+    from .web.server import start_server
+    _has_web = True
+except ImportError:
+    _has_web = False
+    start_server = None
+
 from .agents.semantic_agent import SemanticAgent
 
 
@@ -48,11 +55,15 @@ def main(so_path, metadata_path, scan_dir, output_dir, timeout, batch, verbose,
     """👻 GhostDumper v2.2 — IL2CPP Deep Analyzer & Runtime Toolkit"""
 
     if version:
-        console.print("[bold magenta]GhostDumper v2.2.0[/bold magenta]")
+        console.print("[bold magenta]GhostDumper v2.2.1[/bold magenta]")
         console.print("Phantom Core — IL2CPP Deep Analyzer")
         return
 
     if web:
+        if not _has_web:
+            console.print("[red]Web UI requires Flask. Install it with:[/red]")
+            console.print(Text("  pip install 'ghostdumper[web]'", style="yellow"))
+            sys.exit(1)
         console.print(Panel.fit(
             "[bold magenta]👻 GhostDumper v2.2 Web UI[/bold magenta]",
             subtitle=f"Starting server on http://{web_host}:{web_port}"

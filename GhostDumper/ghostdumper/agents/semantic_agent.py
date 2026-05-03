@@ -83,23 +83,28 @@ class SemanticAgent:
             return self._fallback_search(query, top_k)
 
     def _semantic_search(self, query: str, top_k: int) -> List[SearchResult]:
-        """Semantic search using embeddings."""
-        from numpy import dot
-        from numpy.linalg import norm
+        """Semantic search using embeddings (pure Python, no numpy required)."""
+        import math
 
         query_embedding = self._embedding_model.encode([query])[0]
         embeddings = self._vector_store["embeddings"]
         items = self._vector_store["items"]
 
+        def _norm(v):
+            return math.sqrt(sum(x * x for x in v))
+
+        def _dot(a, b):
+            return sum(x * y for x, y in zip(a, b))
+
         # Compute cosine similarity
         similarities = []
-        q_norm = norm(query_embedding)
+        q_norm = _norm(query_embedding)
         for i, emb in enumerate(embeddings):
-            e_norm = norm(emb)
+            e_norm = _norm(emb)
             if q_norm == 0 or e_norm == 0:
                 sim = 0.0
             else:
-                sim = float(dot(query_embedding, emb) / (q_norm * e_norm))
+                sim = _dot(query_embedding, emb) / (q_norm * e_norm)
             similarities.append((sim, i))
 
         # Sort by similarity

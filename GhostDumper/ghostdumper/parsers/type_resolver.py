@@ -112,14 +112,14 @@ class TypeResolver:
 
     def _resolve_fields(self):
         """Resolve field definitions with offsets."""
-        for field_def in self.metadata.fields:
+        for field in self.metadata.fields:
             field_info = {
-                "name": field_def.name,
-                "type": field_def.type,
-                "offset": field_def.offset,
-                "token": field_def.token,
-                "flags": field_def.flags,
-                "default_value": field_def.default_value,
+                "name": field.name,
+                "type": field.type,
+                "offset": field.offset,
+                "token": field.token,
+                "flags": field.flags,
+                "default_value": field.default_value,
             }
             self.fields.append(field_info)
 

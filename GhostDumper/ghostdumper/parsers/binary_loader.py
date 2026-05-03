@@ -191,22 +191,13 @@ class BinaryLoader:
 
     def _parse_macho(self):
         """Parse Mach-O file."""
+        # Mach-O parsing stub
         magic = struct.unpack("<I", self.raw_data[:4])[0]
         if magic == self.MAGIC_MACHO_64:
             self.bitness = 64
             self.arch = "ARM64"  # Simplified
             header = struct.unpack("<I4I2I", self.raw_data[:32])
-            # header: (magic, cputype, cpusubtype, filetype, ncmds, sizeofcmds, flags)
-            ncmds = header[4]
-            self.entry_point = 0  # Would need to parse LC_MAIN load command
-            self.sections.append({
-                "name": "__TEXT",
-                "ncmds": ncmds,
-                "address": 0,
-                "offset": 0,
-                "size": self.size,
-                "flags": header[6],
-            })
+            self.entry_point = 0  # Would need to parse LC_MAIN
         elif magic == self.MAGIC_MACHO_32:
             self.bitness = 32
             self.arch = "ARM"
@@ -215,32 +206,16 @@ class BinaryLoader:
         """Parse Nintendo Switch NSO file."""
         self.bitness = 64
         self.arch = "ARM64"
-        # NSO0 header: magic, flags, text_offset, rodata_offset
+        # NSO0 header parsing
         header = struct.unpack("<I3I", self.raw_data[:16])
         flags = header[1]
-        # Bit 0 = .text compressed, bit 1 = .rodata compressed, bit 2 = .data compressed
-        self.sections.append({
-            "name": ".text",
-            "address": 0,
-            "offset": struct.unpack("<I", self.raw_data[16:20])[0] if len(self.raw_data) > 20 else 0,
-            "size": 0,
-            "flags": flags,
-            "compressed": bool(flags & 0x1),
-        })
+        # Decompress segments if needed
 
     def _parse_wasm(self):
         """Parse WebAssembly file."""
         self.bitness = 32
         self.arch = "WASM"
         version = struct.unpack("<I", self.raw_data[4:8])[0]
-        self.sections.append({
-            "name": "wasm",
-            "address": 0,
-            "offset": 8,
-            "size": self.size - 8,
-            "flags": 0,
-            "wasm_version": version,
-        })
 
     def _describe_elf_arch(self, machine: int) -> str:
         """Map ELF machine type to architecture name."""

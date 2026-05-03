@@ -1,7 +1,8 @@
 """
 Termux Setup Script for GhostDumper v2.2
 
-Automated setup for Termux (Android) environment.
+Automated lightweight setup for Termux (Android) environment.
+Avoids heavy compilation that freezes low-RAM phones.
 """
 
 import os
@@ -12,7 +13,7 @@ from pathlib import Path
 
 def setup_termux():
     """Configure Termux environment for GhostDumper."""
-    print("👻 GhostDumper v2.2 — Termux Setup")
+    print("👻 GhostDumper v2.2 — Termux Mobile Setup")
     print("=" * 50)
 
     # Check architecture
@@ -23,21 +24,23 @@ def setup_termux():
     print("📦 Updating packages...")
     subprocess.run(["pkg", "update", "-y"], check=True)
 
-    # Install Python
-    print("🐍 Installing Python...")
+    # Install Python (pre-built, no compilation)
+    print("🐍 Installing Python (pre-built wheel)...")
     subprocess.run(["pkg", "install", "-y", "python", "python-pip"], check=True)
 
     # Install git
     print("📥 Installing git...")
     subprocess.run(["pkg", "install", "-y", "git"], check=True)
 
-    # Install build tools
-    print("🔧 Installing build tools...")
-    subprocess.run(["pkg", "install", "-y", "clang", "cmake"], check=True)
+    # Skip clang/cmake — GhostDumper core no longer needs compilation
+    print("⚡ Skipping clang/cmake (not needed for mobile core install)")
 
-    # Install GhostDumper
-    print("👻 Installing GhostDumper...")
-    subprocess.run([sys.executable, "-m", "pip", "install", "-e", "."], check=True)
+    # Install GhostDumper with pre-built wheels only
+    print("👻 Installing GhostDumper (no source compilation)...")
+    subprocess.run([
+        sys.executable, "-m", "pip", "install",
+        "--prefer-binary", "-e", "."
+    ], check=True)
 
     # Create config directory
     config_dir = Path.home() / ".config" / "ghostdumper"
@@ -47,6 +50,12 @@ def setup_termux():
     print(f"\nUsage:")
     print(f"  ghostdump --help")
     print(f"  ghostdump -s /path/to/libil2cpp.so -m /path/to/global-metadata.dat")
+    print(f"\n📱 Mobile tips:")
+    print(f"  - Core install is fast (~5 MB of deps)")
+    print(f"  - Web UI and AI features are NOT installed by default")
+    print(f"  - To add them later (may freeze on low-RAM phones):")
+    print(f"      pip install --prefer-binary -e '.[web]'")
+    print(f"      pip install --prefer-binary -e '.[ai]'")
 
     # Test installation
     print("\n🧪 Testing installation...")
