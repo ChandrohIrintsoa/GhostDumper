@@ -23,33 +23,6 @@ Unlike v1.1 which was limited to ELF+metadata static analysis, **v2.2 is a compl
 
 ---
 
-## 📊 Comparison Matrix
-
-| Feature | GhostDumper v1.1 | Il2CppDumper | Il2CppInspector | Il2CppGG | GhostDumper v2.2 |
-|---------|-----------------|--------------|-----------------|----------|------------------|
-| ELF Support | ✅ | ✅ | ✅ | ✅ | ✅ |
-| PE Support | ❌ | ✅ | ✅ | ❌ | ✅ |
-| Mach-O Support | ❌ | ✅ | ✅ | ❌ | ✅ |
-| NSO/WASM | ❌ | ✅ | ❌ | ❌ | ✅ |
-| Metadata-only mode | ✅ | ❌ | ❌ | ❌ | ✅ |
-| ELF-only mode | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Web UI | ❌ | ❌ (Python port has it) | ❌ | ❌ | ✅ |
-| Plugin System | ❌ | ❌ | ✅ | ❌ | ✅ |
-| Deobfuscation | ❌ | Basic | Advanced | Basic | Advanced |
-| Radare2 Scripts | ✅ | ❌ | ✅ | ❌ | ✅ |
-| Ghidra Scripts | ❌ | ❌ | ✅ | ❌ | ✅ |
-| IDA Scripts | ❌ | ✅ | ✅ | ❌ | ✅ |
-| C++ Scaffolding | ❌ | ❌ | ✅ | ❌ | ✅ |
-| Dummy DLL Info | ❌ | ✅ | ✅ | ❌ | ✅ |
-| Runtime Hooks | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Agentic AI | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Semantic Search | ❌ | ❌ | ❌ | ❌ | ✅ |
-| JSON API | ❌ | ❌ | ✅ | ❌ | ✅ |
-| Termux Optimized | ✅ | ❌ | ❌ | ✅ | ✅ |
-| Batch/CI Mode | Basic | ❌ | ❌ | ❌ | Advanced |
-
----
-
 ## 🚀 Quick Start
 
 ### Installation
@@ -114,41 +87,6 @@ ghostdump -s libil2cpp.so -m global-metadata.dat --generate-hooks PlayerControll
 
 ---
 
-## 🏗️ Architecture
-
-```
-GhostDumper v2.2
-├── Core Engine
-│   ├── Binary Loader (ELF/PE/Mach-O/NSO/WASM)
-│   ├── Metadata Parser (v16-v31)
-│   ├── Type Resolution Engine
-│   └── Deobfuscation Pipeline
-├── Plugin System
-│   ├── Loader Plugins (miHoYo, Beebyte, etc.)
-│   ├── Decryptor Plugins (XOR, ROT, Custom)
-│   └── Output Plugins
-├── Generators
-│   ├── C# Dump (dump.cs)
-│   ├── C++ Scaffold (il2cpp.h, hooks.cpp)
-│   ├── Script Generators (r2, ghidra, ida)
-│   └── JSON Metadata
-├── Agentic AI Layer
-│   ├── Semantic Code Chunker
-│   ├── Vector Embeddings (local)
-│   ├── Class Hierarchy Analyzer
-│   └── Natural Language Query
-├── Web Interface
-│   ├── Real-time Streaming
-│   ├── Interactive Graphs
-│   └── Search & Filter
-└── Utils
-    ├── Memory Pattern Scanner
-    ├── String Decryptor
-    └── Version Detector
-```
-
----
-
 ## 🧪 Testing
 
 ```bash
@@ -156,15 +94,7 @@ pytest tests/ -v
 ```
 
 ---
-
-## 🤝 Credits
-
-- — Il2CppDumper (reference implementation)
-- — Il2CppInspector (plugin architecture, deobfuscation)
-- — Il2CppGG (runtime hook concepts)
-- — Il2CppDumper-Python (web UI inspiration)
-- **il2cpp-dump-analyzer**
-
+## BY **ChaIr**
 ---
 
 ## ⚠️ Disclaimer
