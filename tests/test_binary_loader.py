@@ -21,7 +21,7 @@ class TestBinaryLoader:
     def test_pe_detection(self, tmp_path):
         pe_data = b"MZ" + b"\x00" * 58 + b"\x40\x00\x00\x00"
         pe_file = tmp_path / "test.dll"
-        pe_file.write_bytes(pe_data + b"\x00" * 200)
+        pe_file.write_bytes(pe_data + b"PE\x00\x00" + b"\x00" * 200)
 
         config = GhostConfig()
         loader = BinaryLoader(str(pe_file), config)

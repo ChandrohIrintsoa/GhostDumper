@@ -34,7 +34,7 @@ class CsGenerator:
             "// GhostDumper v2.2 — IL2CPP C# Dump",
             f"// Generated: {datetime.now().isoformat()}",
             f"// Binary: {self.result.binary_info.get('format', 'Unknown')} {self.result.binary_info.get('arch', 'Unknown')}",
-            f"// Base: 0x{self.result.binary_info.get('base_address', 0):08X}",
+            f"// Base: {self.result.binary_info.get('base_address', '0x00000000')}",
             "",
             "using System;",
             "using System.Collections.Generic;",

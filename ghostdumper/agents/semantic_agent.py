@@ -93,8 +93,13 @@ class SemanticAgent:
 
         # Compute cosine similarity
         similarities = []
+        q_norm = norm(query_embedding)
         for i, emb in enumerate(embeddings):
-            sim = dot(query_embedding, emb) / (norm(query_embedding) * norm(emb))
+            e_norm = norm(emb)
+            if q_norm == 0 or e_norm == 0:
+                sim = 0.0
+            else:
+                sim = float(dot(query_embedding, emb) / (q_norm * e_norm))
             similarities.append((sim, i))
 
         # Sort by similarity

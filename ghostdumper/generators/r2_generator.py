@@ -115,18 +115,18 @@ class R2Generator:
             safe_name = self._sanitize_name(class_name)
 
             self.lines.extend([
-                f""td struct {safe_name} {{"",
-                f""  void* vtable;"",
+                f'"td struct {safe_name} {{"',
+                f'"  void* vtable;"',
             ])
 
             for field in type_info.get("fields", []):
                 field_name = field.get("name", "field")
                 field_type = self._r2_type(field.get("type", "void*"))
                 offset = field.get("offset", 0)
-                self.lines.append(f""  {field_type} {field_name}; // 0x{offset:04X}"")
+                self.lines.append(f'"  {field_type} {field_name}; // 0x{offset:04X}"')
 
             self.lines.extend([
-                f""}};"",
+                f'""}};""',
                 f"ts+ {safe_name}",
                 "",
             ])
@@ -142,14 +142,14 @@ class R2Generator:
                 safe_name = self._sanitize_name(class_name)
 
                 self.lines.extend([
-                    f""td struct {safe_name}_vtable {{"",
+                    f'"td struct {safe_name}_vtable {{"',
                 ])
 
                 for i in range(vtable_size):
-                    self.lines.append(f""  void* method_{i};"")
+                    self.lines.append(f'"  void* method_{i};"')
 
                 self.lines.extend([
-                    f""}};"",
+                    f'""}};""',
                     f"ts+ {safe_name}_vtable",
                     "",
                 ])

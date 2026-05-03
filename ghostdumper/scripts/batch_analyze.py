@@ -82,8 +82,7 @@ def main():
 
     results = batch_analyze(args.input, args.output, args.pattern)
 
-    print(f"
-Batch Analysis Complete:")
+    print(f"\nBatch Analysis Complete:")
     print(f"  Total: {results['total']}")
     print(f"  Success: {results['success']}")
     print(f"  Failed: {results['failed']}")

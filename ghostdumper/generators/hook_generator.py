@@ -37,7 +37,7 @@ class HookGenerator:
             "",
             "// Usage: frida -U -f com.package.name -l hook.js --no-pause",
             "",
-            "var moduleName = "libil2cpp.so";",
+            'var moduleName = "libil2cpp.so";',
             "var baseAddr = Module.findBaseAddress(moduleName);",
             "",
             "function hook_by_offset(offset, name, retType, argTypes) {",
@@ -78,7 +78,7 @@ class HookGenerator:
             if addr and addr > base:
                 offset = addr - base
                 lines.append(f"// {name}")
-                lines.append(f"hook_by_offset(0x{offset:08X}, "{name}", "void", []);")
+                lines.append(f'hook_by_offset(0x{offset:08X}, "{name}", "void", []);')
                 lines.append("")
 
         lines.extend([
@@ -89,8 +89,7 @@ class HookGenerator:
 
         path = self.output_dir / f"{self.stem}_frida.js"
         with open(path, "w") as f:
-            f.write("
-".join(lines))
+            f.write("\n".join(lines))
 
     def _generate_cpp_hooks(self):
         """Generate C++ hook scaffolding."""
@@ -106,7 +105,7 @@ class HookGenerator:
             "// Platform-specific includes",
             "#ifdef __ANDROID__",
             "#include <android/log.h>",
-            "#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "GhostDumper", __VA_ARGS__)",
+            '#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "GhostDumper", __VA_ARGS__)',
             "#else",
             "#define LOGI(...) printf(__VA_ARGS__)",
             "#endif",
@@ -114,7 +113,7 @@ class HookGenerator:
             "namespace hooks {",
             "",
             "// Target module",
-            "const char* TARGET_MODULE = "libil2cpp.so";",
+            'const char* TARGET_MODULE = "libil2cpp.so";',
             "",
             "// Base address (set at runtime)",
             "uintptr_t g_base_addr = 0;",
@@ -170,7 +169,7 @@ class HookGenerator:
             "    g_base_addr = get_module_base(TARGET_MODULE);",
             "    if (!g_base_addr) return false;",
             "",
-            "    LOGI("[GhostDumper] Base address: 0x%llx", g_base_addr);",
+            '    LOGI("[GhostDumper] Base address: 0x%llx", g_base_addr);',
             "",
         ])
 
@@ -200,8 +199,7 @@ class HookGenerator:
 
         path = self.output_dir / f"{self.stem}_hooks.cpp"
         with open(path, "w") as f:
-            f.write("
-".join(lines))
+            f.write("\n".join(lines))
 
     def _generate_pattern_scanner(self):
         """Generate pattern scanner helper."""
@@ -217,7 +215,7 @@ class HookGenerator:
             "// Pattern: bytes with '?' as wildcard",
             "uintptr_t find_pattern(uintptr_t start, size_t size, const char* pattern) {",
             "    // Parse pattern string",
-            "    // Example: "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC 20"",
+            '    // Example: "48 89 5C 24 ? 48 89 74 24 ? 57 48 83 EC 20"',
             "    ",
             "    // Simple implementation",
             "    return 0;",
@@ -233,7 +231,7 @@ class HookGenerator:
             lines.extend([
                 f"// Pattern for {method_name}",
                 f"// TODO: Add known pattern from analysis",
-                f"const char* pattern_{method_name} = "?? ?? ?? ??";",
+                f'const char* pattern_{method_name} = "?? ?? ?? ??";',
                 "",
             ])
 
@@ -244,5 +242,4 @@ class HookGenerator:
 
         path = self.output_dir / f"{self.stem}_patterns.cpp"
         with open(path, "w") as f:
-            f.write("
-".join(lines))
+            f.write("\n".join(lines))

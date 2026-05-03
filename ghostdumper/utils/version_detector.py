@@ -13,7 +13,7 @@ from pathlib import Path
 class VersionDetector:
     """Detect Unity and IL2CPP versions."""
 
-    UNITY_VERSION_PATTERN = re.compile(rb"(\d{1,2})\.(\d{1,3})\.(\d{1,3})([a-z]\d+)?")
+    UNITY_VERSION_PATTERN = re.compile(rb"(\d{1,4})\.(\d{1,3})\.(\d{1,3})([a-z]\d+)?")
     IL2CPP_VERSION_PATTERN = re.compile(rb"il2cpp_version|global-metadata")
 
     @classmethod

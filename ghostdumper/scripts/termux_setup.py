@@ -44,14 +44,12 @@ def setup_termux():
     config_dir.mkdir(parents=True, exist_ok=True)
 
     print("✅ Setup complete!")
-    print(f"
-Usage:")
+    print(f"\nUsage:")
     print(f"  ghostdump --help")
     print(f"  ghostdump -s /path/to/libil2cpp.so -m /path/to/global-metadata.dat")
 
     # Test installation
-    print("
-🧪 Testing installation...")
+    print("\n🧪 Testing installation...")
     result = subprocess.run(["ghostdump", "--version"], capture_output=True, text=True)
     if result.returncode == 0:
         print(f"✅ {result.stdout.strip()}")

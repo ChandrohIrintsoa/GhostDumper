@@ -124,8 +124,8 @@ class GhostEngine:
         except Exception as e:
             self.result.errors.append(str(e))
             self.logger.error(f"Analysis failed: {e}")
-            raise
-
+            # Don't re-raise; return partial result with error information
+            
         self.result.duration = time.time() - start_time
         self._print_summary()
 
@@ -159,6 +159,11 @@ class GhostEngine:
         if not self.config.metadata_path:
             progress.update(task, completed=100, description="[yellow]Skipping metadata (no file provided)[/yellow]")
             return
+
+        # Detect metadata version before full parse
+        detected_version = VersionDetector.detect(self.config.metadata_path)
+        if detected_version and detected_version not in self.SUPPORTED_METADATA_VERSIONS:
+            self.logger.warning(f"Unsupported metadata version detected: v{detected_version}")
 
         self.metadata_parser = MetadataParser(self.config.metadata_path, self.config)
         self.metadata_parser.parse()
@@ -221,7 +226,7 @@ class GhostEngine:
         output_dir = self.config.get_output_dir()
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        stem = Path(self.config.so_path).stem if self.config.so_path else "analysis"
+        stem = Path(self.config.so_path).stem if self.config.so_path else Path(self.config.metadata_path).stem if self.config.metadata_path else "analysis"
         generators = []
 
         if self.config.generate_cpp:
@@ -236,16 +241,22 @@ class GhostEngine:
             generators.append(("IDA Pro", IdaGenerator(self.result, output_dir, stem)))
         if self.config.generate_json:
             generators.append(("JSON", JsonGenerator(self.result, output_dir, stem)))
-        if self.config.generate_hooks:
+        if self.config.generate_hooks is not None:
             generators.append(("Hooks", HookGenerator(self.result, output_dir, stem)))
         if self.config.generate_web_report:
             generators.append(("Web Report", WebReportGenerator(self.result, output_dir, stem)))
 
         total = len(generators)
         for i, (name, gen) in enumerate(generators):
-            gen.generate()
-            progress.update(task, completed=int((i + 1) / total * 100), 
-                          description=f"[cyan]Generating {name}... ({i+1}/{total})[/cyan]")
+            try:
+                gen.generate()
+                progress.update(task, completed=int((i + 1) / total * 100), 
+                              description=f"[cyan]Generating {name}... ({i+1}/{total})[/cyan]")
+            except Exception as e:
+                self.logger.error(f"Generator {name} failed: {e}")
+                self.result.errors.append(f"Generator {name}: {e}")
+                progress.update(task, completed=int((i + 1) / total * 100), 
+                              description=f"[red]{name} failed: {e}[/red]")
 
         progress.update(task, completed=100, description=f"[green]Outputs generated in {output_dir}[/green]")
 

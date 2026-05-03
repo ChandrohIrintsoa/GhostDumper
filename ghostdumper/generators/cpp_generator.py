@@ -177,7 +177,7 @@ class CppGenerator:
             f"{ret_type} {prefix}{class_name}::{name}({params}) {{",
             f"    // TODO: Implement",
             f"    // Token: 0x{method.get('token', 0):08X}",
-            f"    // Address: 0x{method.get('address', 0):08X}",
+            f"    // Address: 0x{method.get('address') or 0:08X}",
             f"    return {self._default_return(ret_type)};",
             f"}}",
         ])

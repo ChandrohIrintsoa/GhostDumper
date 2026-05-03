@@ -136,7 +136,7 @@ class GhidraGenerator:
                 self.lines.append(f'        failed += 1')
 
         self.lines.extend([
-            "    print("Renamed {} functions, {} failed".format(renamed, failed))",
+            '    print("Renamed {} functions, {} failed".format(renamed, failed))',
             "",
             "rename_all_functions()",
             "",
@@ -189,8 +189,19 @@ class GhidraGenerator:
                 field_type = field.get("type", "void*")
                 offset = field.get("offset", 0)
 
+                # Map IL2CPP types to Ghidra data types
+                ghidra_type = {
+                    "System.Int32": "IntegerDataType()",
+                    "System.UInt32": "UnsignedIntegerDataType()",
+                    "System.Int64": "LongDataType()",
+                    "System.UInt64": "UnsignedLongDataType()",
+                    "System.Boolean": "BooleanDataType()",
+                    "System.Single": "FloatDataType()",
+                    "System.Double": "DoubleDataType()",
+                }.get(field_type, "PointerDataType()")
+
                 self.lines.append(
-                    f'    struct.add(PointerDataType(), 8, "{field_name}", "")  # Offset: 0x{offset:04X}'
+                    f'    struct.add({ghidra_type}, 8, "{field_name}", "")  # {field_type} @ Offset: 0x{offset:04X}'
                 )
 
             self.lines.append(f'    dtm.addDataType(struct, None)')

@@ -93,8 +93,20 @@ class PluginManager:
 
     def _load_builtin_plugins(self):
         """Load built-in plugins."""
-        # Built-in plugins are loaded from the package
-        pass
+        for name, module_path in self.BUILTIN_PLUGINS.items():
+            try:
+                module = importlib.import_module(f"ghostdumper.{module_path}")
+                for attr_name in dir(module):
+                    attr = getattr(module, attr_name)
+                    if (isinstance(attr, type) and
+                        issubclass(attr, GhostPlugin) and
+                        attr is not GhostPlugin and
+                        getattr(attr, 'name', '') == name):
+                        plugin = attr()
+                        self.plugins[plugin.name] = plugin
+                        break
+            except Exception as e:
+                print(f"Failed to load built-in plugin {name}: {e}")
 
     def _load_plugin_file(self, path: Path):
         """Load a plugin from file."""

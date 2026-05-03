@@ -35,7 +35,7 @@ console = Console()
 @click.option("--all-formats", is_flag=True, help="Generate all output formats")
 @click.option("--deobfuscate", type=click.Choice(["xor", "rot", "beebyte", "mihoyo", "custom"]), help="Deobfuscation type")
 @click.option("--deobf-key", help="Deobfuscation key")
-@click.option("--generate-hooks", is_flag=True, help="Generate runtime hook scaffolding")
+@click.option("--generate-hooks", default=None, help="Generate runtime hook scaffolding (optional target class)")
 @click.option("--web", is_flag=True, help="Launch web UI")
 @click.option("--web-port", default=8080, help="Web UI port")
 @click.option("--web-host", default="0.0.0.0", help="Web UI host")
@@ -73,6 +73,7 @@ def main(so_path, metadata_path, scan_dir, output_dir, timeout, batch, verbose,
         deobf_key=deobf_key,
         enable_agent=bool(agent_query),
         agent_query=agent_query,
+        generate_hooks=generate_hooks,
     )
 
     if all_formats:
@@ -84,7 +85,7 @@ def main(so_path, metadata_path, scan_dir, output_dir, timeout, batch, verbose,
         config.generate_dump_cs = True
         config.generate_il2cpp_h = True
         config.generate_json = True
-        config.generate_hooks = True
+        config.generate_hooks = generate_hooks
         config.generate_web_report = True
 
     if generate_hooks:
@@ -93,8 +94,7 @@ def main(so_path, metadata_path, scan_dir, output_dir, timeout, batch, verbose,
     # Validate inputs
     if not so_path and not metadata_path and not scan_dir:
         console.print("[bold red]Error:[/bold red] No input files specified. Use -s, -m, or -d.")
-        console.print("
-Usage examples:")
+        console.print("\nUsage examples:")
         console.print("  ghostdump -s libil2cpp.so -m global-metadata.dat")
         console.print("  ghostdump -d /path/to/game/")
         console.print("  ghostdump --web")

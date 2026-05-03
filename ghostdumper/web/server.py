@@ -16,7 +16,7 @@ from ..agents.semantic_agent import SemanticAgent
 app = Flask(__name__, 
            template_folder="templates",
            static_folder="static")
-app.config["SECRET_KEY"] = "ghostdumper-v2.2-secret"
+app.config["SECRET_KEY"] = os.environ.get("GHOSTDUMPER_SECRET", os.urandom(32))
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024 * 1024  # 2GB max upload
 
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -94,6 +94,9 @@ def api_search():
     if not _current_analysis:
         return jsonify({"error": "No analysis available. Run analysis first."}), 400
 
+    if not request.json:
+        return jsonify({"error": "Missing JSON body"}), 400
+    
     query = request.json.get("query", "")
     top_k = request.json.get("top_k", 10)
 
@@ -132,7 +135,9 @@ def api_download(filename):
     if not _current_analysis:
         return jsonify({"error": "No analysis available"}), 400
 
-    file_path = _current_analysis["output_dir"] / filename
+    file_path = (_current_analysis["output_dir"] / filename).resolve()
+    if not str(file_path).startswith(str(_current_analysis["output_dir"].resolve())):
+        return jsonify({"error": "Invalid filename"}), 400
     if file_path.exists():
         return send_file(file_path, as_attachment=True)
 

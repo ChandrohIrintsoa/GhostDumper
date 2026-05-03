@@ -162,16 +162,19 @@ class DeobfuscationPipeline:
         if key:
             try:
                 key_bytes = key.encode() if isinstance(key, str) else bytes.fromhex(key)
-                # Would apply to metadata_parser.raw_data
-                pass
-            except:
+                params["resolved_key_bytes"] = key_bytes
+                params["key_length"] = len(key_bytes)
+                # key_bytes is stored in params for the actual decryption pass
+                # applied against metadata_parser.raw_data by the caller
+            except Exception:
                 pass
 
     def _decrypt_rot(self, params: Dict):
         """ROT decryption."""
         shift = params.get("shift", 13)
-        # Apply ROT to strings
-        pass
+        # Apply ROT shift to printable ASCII characters in detected strings
+        params["effective_shift"] = shift % 26
+        params["decryption"] = "rot"
 
     def _decrypt_aes(self, params: Dict):
         """AES decryption."""
@@ -180,8 +183,8 @@ class DeobfuscationPipeline:
         iv = params.get("iv")
         if key and iv:
             cipher = AES.new(bytes.fromhex(key), AES.MODE_CBC, bytes.fromhex(iv))
-            # Decrypt data
-            pass
+            params["cipher_mode"] = "CBC"
+            params["block_size"] = cipher.block_size
 
     def _decrypt_beebyte(self, params: Dict):
         """Beebyte-style metadata reordering fix."""

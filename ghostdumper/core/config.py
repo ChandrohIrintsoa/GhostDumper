@@ -30,7 +30,7 @@ class GhostConfig:
     generate_dump_cs: bool = True
     generate_il2cpp_h: bool = False
     generate_json: bool = True
-    generate_hooks: bool = False
+    generate_hooks: Optional[str] = None  # class name or None for all
     generate_web_report: bool = False
 
     # Deobfuscation

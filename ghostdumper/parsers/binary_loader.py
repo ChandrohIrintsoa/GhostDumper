@@ -88,17 +88,25 @@ class BinaryLoader:
 
     def _parse_elf(self):
         """Parse ELF file using pyelftools."""
-        elf = ELFFile(open(self.path, "rb"))
+        with open(self.path, "rb") as f:
+            elf = ELFFile(f)
 
-        self.bitness = 64 if elf.elfclass == 64 else 32
-        self.arch = self._describe_elf_arch(elf["e_machine"])
-        self.entry_point = elf["e_entry"]
+            self.bitness = 64 if elf.elfclass == 64 else 32
+            # pyelftools returns string descriptions for e_machine; read raw value from bytes
+            machine = struct.unpack("<H", self.raw_data[18:20])[0]
+            self.arch = self._describe_elf_arch(machine)
+            # Read raw entry point to avoid pyelftools description issues
+            entry_offset = 24
+            entry_size = 8 if self.bitness == 64 else 4
+            self.entry_point = struct.unpack("<Q" if self.bitness == 64 else "<I",
+                                              self.raw_data[entry_offset:entry_offset+entry_size])[0]
 
-        # Find base address from first PT_LOAD segment
-        for segment in elf.iter_segments():
-            if segment["p_type"] == "PT_LOAD":
-                self.base_address = segment["p_vaddr"] - segment["p_offset"]
-                break
+            # Find base address from lowest p_vaddr among PT_LOAD segments
+            load_segments = [seg for seg in elf.iter_segments() if seg["p_type"] == "PT_LOAD"]
+            if load_segments:
+                self.base_address = min(seg["p_vaddr"] for seg in load_segments)
+            else:
+                self.base_address = 0
 
         # Parse sections
         for section in elf.iter_sections():
@@ -124,40 +132,46 @@ class BinaryLoader:
                             "bind": symbol["st_info"]["bind"],
                             "section": symbol["st_shndx"],
                         })
-
-        elf.stream.close()
-
+        
     def _parse_pe(self):
         """Parse PE file."""
         # PE parsing implementation
-        dos_header = struct.unpack("<2s58xH", self.raw_data[:64])
+        dos_header = struct.unpack("<2s58xI", self.raw_data[:64])
         pe_offset = dos_header[1]
 
         pe_sig = self.raw_data[pe_offset:pe_offset+4]
         if pe_sig != b"PE\x00\x00":
             raise ValueError("Invalid PE signature")
+        
+        self.format = "PE"
 
         coff_header = struct.unpack("<2H3I2H", self.raw_data[pe_offset+4:pe_offset+24])
         machine = coff_header[0]
         num_sections = coff_header[1]
+        size_of_optional_header = coff_header[5]
 
         self.bitness = 64 if machine == 0x8664 else 32
         self.arch = "x64" if self.bitness == 64 else "x86"
 
         optional_header_offset = pe_offset + 24
-        magic = struct.unpack("<H", self.raw_data[optional_header_offset:optional_header_offset+2])[0]
+        
+        if size_of_optional_header > 0:
+            magic = struct.unpack("<H", self.raw_data[optional_header_offset:optional_header_offset+2])[0]
 
-        if magic == 0x10b:  # PE32
-            self.entry_point = struct.unpack("<I", self.raw_data[optional_header_offset+16:optional_header_offset+20])[0]
-            self.base_address = struct.unpack("<I", self.raw_data[optional_header_offset+28:optional_header_offset+32])[0]
-        elif magic == 0x20b:  # PE32+
-            self.entry_point = struct.unpack("<I", self.raw_data[optional_header_offset+16:optional_header_offset+20])[0]
-            self.base_address = struct.unpack("<Q", self.raw_data[optional_header_offset+24:optional_header_offset+32])[0]
+            if magic == 0x10b:  # PE32
+                self.entry_point = struct.unpack("<I", self.raw_data[optional_header_offset+16:optional_header_offset+20])[0]
+                self.base_address = struct.unpack("<I", self.raw_data[optional_header_offset+28:optional_header_offset+32])[0]
+            elif magic == 0x20b:  # PE32+
+                self.entry_point = struct.unpack("<I", self.raw_data[optional_header_offset+16:optional_header_offset+20])[0]
+                self.base_address = struct.unpack("<Q", self.raw_data[optional_header_offset+24:optional_header_offset+32])[0]
 
-        # Parse sections
-        section_table_offset = optional_header_offset + (224 if magic == 0x20b else 96)
+        # Parse sections using actual optional header size
+        section_table_offset = optional_header_offset + size_of_optional_header
         for i in range(num_sections):
             sec_offset = section_table_offset + i * 40
+            # Bounds check to prevent crashes on truncated PE files
+            if sec_offset + 40 > len(self.raw_data):
+                break
             name = self.raw_data[sec_offset:sec_offset+8].rstrip(b"\x00").decode("ascii", errors="ignore")
             vsize, vaddr, raw_size, raw_offset = struct.unpack("<4I", self.raw_data[sec_offset+8:sec_offset+24])
             chars = struct.unpack("<I", self.raw_data[sec_offset+36:sec_offset+40])[0]
@@ -177,13 +191,22 @@ class BinaryLoader:
 
     def _parse_macho(self):
         """Parse Mach-O file."""
-        # Mach-O parsing stub
         magic = struct.unpack("<I", self.raw_data[:4])[0]
         if magic == self.MAGIC_MACHO_64:
             self.bitness = 64
             self.arch = "ARM64"  # Simplified
             header = struct.unpack("<I4I2I", self.raw_data[:32])
-            self.entry_point = 0  # Would need to parse LC_MAIN
+            # header: (magic, cputype, cpusubtype, filetype, ncmds, sizeofcmds, flags)
+            ncmds = header[4]
+            self.entry_point = 0  # Would need to parse LC_MAIN load command
+            self.sections.append({
+                "name": "__TEXT",
+                "ncmds": ncmds,
+                "address": 0,
+                "offset": 0,
+                "size": self.size,
+                "flags": header[6],
+            })
         elif magic == self.MAGIC_MACHO_32:
             self.bitness = 32
             self.arch = "ARM"
@@ -192,16 +215,32 @@ class BinaryLoader:
         """Parse Nintendo Switch NSO file."""
         self.bitness = 64
         self.arch = "ARM64"
-        # NSO0 header parsing
+        # NSO0 header: magic, flags, text_offset, rodata_offset
         header = struct.unpack("<I3I", self.raw_data[:16])
         flags = header[1]
-        # Decompress segments if needed
+        # Bit 0 = .text compressed, bit 1 = .rodata compressed, bit 2 = .data compressed
+        self.sections.append({
+            "name": ".text",
+            "address": 0,
+            "offset": struct.unpack("<I", self.raw_data[16:20])[0] if len(self.raw_data) > 20 else 0,
+            "size": 0,
+            "flags": flags,
+            "compressed": bool(flags & 0x1),
+        })
 
     def _parse_wasm(self):
         """Parse WebAssembly file."""
         self.bitness = 32
         self.arch = "WASM"
         version = struct.unpack("<I", self.raw_data[4:8])[0]
+        self.sections.append({
+            "name": "wasm",
+            "address": 0,
+            "offset": 8,
+            "size": self.size - 8,
+            "flags": 0,
+            "wasm_version": version,
+        })
 
     def _describe_elf_arch(self, machine: int) -> str:
         """Map ELF machine type to architecture name."""

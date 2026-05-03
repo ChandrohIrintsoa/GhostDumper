@@ -28,14 +28,12 @@ class IdaGenerator:
         # Write IDC
         idc_path = self.output_dir / f"{self.stem}_ida.idc"
         with open(idc_path, "w") as f:
-            f.write("
-".join(self.idc_lines))
+            f.write("\n".join(self.idc_lines))
 
         # Write Python
         py_path = self.output_dir / f"{self.stem}_ida.py"
         with open(py_path, "w") as f:
-            f.write("
-".join(self.py_lines))
+            f.write("\n".join(self.py_lines))
 
     def _generate_idc(self):
         """Generate IDC script."""
@@ -59,7 +57,7 @@ class IdaGenerator:
             addr = method.get("address")
             name = method.get("name")
             if addr and name:
-                safe_name = name.replace(""", "\"").replace("'", "\'")
+                safe_name = name.replace('"', '\\"').replace("'", "\\'")
                 self.idc_lines.extend([
                     f"    addr = 0x{addr:08X};",
                     f'    if (MakeName(addr, "{safe_name}") == 0) {{',
@@ -96,7 +94,7 @@ class IdaGenerator:
             addr = method.get("address")
             name = method.get("name")
             if addr and name:
-                safe_name = name.replace(""", "\"")
+                safe_name = name.replace('"', '\\"')
                 self.py_lines.extend([
                     f'    if idc.set_name(0x{addr:08X}, "{safe_name}", idc.SN_CHECK):',
                     f'        renamed += 1',
@@ -105,7 +103,7 @@ class IdaGenerator:
                 ])
 
         self.py_lines.extend([
-            "    print(f"Renamed {renamed} functions, {failed} failed")",
+            '    print(f"Renamed {renamed} functions, {failed} failed")',
             "",
             "def set_comments():",
         ])

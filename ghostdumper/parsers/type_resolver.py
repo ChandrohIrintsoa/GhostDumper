@@ -42,18 +42,24 @@ class TypeResolver:
         if not self.binary:
             return
 
+        try:
+            import cxxfilt
+            has_cxxfilt = True
+        except Exception:
+            has_cxxfilt = False
+
         for sym in self.binary.symbols:
             name = sym.get("name", "")
             if name:
                 self._symbol_cache[name] = sym.get("address", 0)
                 # Also cache demangled name
-                try:
-                    import cxxfilt
-                    demangled = cxxfilt.demangle(name)
-                    if demangled != name:
-                        self._symbol_cache[demangled] = sym.get("address", 0)
-                except:
-                    pass
+                if has_cxxfilt:
+                    try:
+                        demangled = cxxfilt.demangle(name)
+                        if demangled != name:
+                            self._symbol_cache[demangled] = sym.get("address", 0)
+                    except Exception:
+                        pass
 
     def _resolve_types(self):
         """Resolve type definitions."""
@@ -106,14 +112,14 @@ class TypeResolver:
 
     def _resolve_fields(self):
         """Resolve field definitions with offsets."""
-        for field in self.metadata.fields:
+        for field_def in self.metadata.fields:
             field_info = {
-                "name": field.name,
-                "type": field.type,
-                "offset": field.offset,
-                "token": field.token,
-                "flags": field.flags,
-                "default_value": field.default_value,
+                "name": field_def.name,
+                "type": field_def.type,
+                "offset": field_def.offset,
+                "token": field_def.token,
+                "flags": field_def.flags,
+                "default_value": field_def.default_value,
             }
             self.fields.append(field_info)
 
@@ -150,8 +156,21 @@ class TypeResolver:
 
     def _belongs_to(self, item: Dict, type_info: Dict) -> bool:
         """Check if method/field belongs to type."""
-        # Simplified - would need proper token analysis
-        return True
+        # Use explicit declaring_type if available
+        declaring = item.get("declaring_type")
+        if declaring:
+            return declaring == type_info.get("name") or declaring == type_info.get("index")
+        
+        # Fallback: check if the item name starts with or contains the type name
+        type_name = type_info.get("name", "")
+        item_name = item.get("name", "")
+        if type_name and item_name:
+            # Common patterns: TypeName_MethodName or TypeName::MethodName
+            prefix = type_name.replace("::", "_").replace(".", "_")
+            if item_name.startswith(prefix + "_") or item_name.startswith(type_name + "::"):
+                return True
+        
+        return False
 
     def get_class_hierarchy(self, class_name: str) -> List[str]:
         """Get inheritance chain for a class."""

@@ -131,10 +131,17 @@ class MetadataParser:
 
     def _detect_encryption(self):
         """Detect if metadata is encrypted or obfuscated."""
-        # Check for normal metadata magic: 0xFAB11BAF for v21+, 0x5 for older
+        if not self.raw_data:
+            self.raw_data = self.path.read_bytes()
+        
+        if len(self.raw_data) < 4:
+            self.is_encrypted = False
+            return
+        
+        # Check for normal metadata magic: 0xFAB11BAF for v21+, version number for older
         magic = struct.unpack("<I", self.raw_data[:4])[0]
 
-        known_magics = [0xFAB11BAF, 0x5, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27]
+        known_magics = [0xFAB11BAF, 0x5] + list(range(16, 32))
 
         if magic not in known_magics and magic != 0:
             # Check for XOR encryption patterns
@@ -164,7 +171,12 @@ class MetadataParser:
             raise ValueError("Metadata file too small")
 
         # Version detection
-        self.version = struct.unpack("<I", self.raw_data[:4])[0]
+        magic = struct.unpack("<I", self.raw_data[:4])[0]
+        if magic == 0xFAB11BAF:
+            # v21+ format: magic at offset 0, version at offset 4
+            self.version = struct.unpack("<I", self.raw_data[4:8])[0]
+        else:
+            self.version = magic
 
         # Handle different header sizes based on version
         if self.version >= 21:
@@ -184,6 +196,14 @@ class MetadataParser:
         if self.version >= 21:
             string_literal_offset = struct.unpack("<I", self.raw_data[4:8])[0]
             string_literal_count = struct.unpack("<I", self.raw_data[8:12])[0]
+
+            # Sanity check on count to prevent memory exhaustion on corrupted files
+            if string_literal_count > 1_000_000:
+                self.errors.append(f"String count {string_literal_count} exceeds safety limit, capping to 1,000,000")
+                string_literal_count = 1_000_000
+
+            if string_literal_count == 0:
+                return
 
             offset = string_literal_offset
             for _ in range(min(string_literal_count, 100000)):  # Safety limit
